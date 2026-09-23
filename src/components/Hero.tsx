@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { BUSINESS_INFO } from '../data/business';
+import { apiClient, ApiImageModel } from '../api/client';
 
 interface HeroProps {
   onOpenBooking: () => void;
@@ -8,6 +9,23 @@ interface HeroProps {
 }
 
 export const Hero: React.FC<HeroProps> = ({ onOpenBooking, onExploreServices }) => {
+  const [activeHero, setActiveHero] = useState<ApiImageModel | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    apiClient.getActiveImage('HERO').then((img) => {
+      if (isMounted && img) {
+        setActiveHero(img);
+      }
+    }).catch(() => {
+      // Graceful fallback to default asset
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <section className="relative pt-32 pb-16 md:pt-40 md:pb-24 overflow-hidden bg-gradient-to-b from-[#111317] via-[#0c0d0e] to-[#0c0d0e]">
       {/* Subtle architectural ambient glow */}
@@ -84,14 +102,16 @@ export const Hero: React.FC<HeroProps> = ({ onOpenBooking, onExploreServices }) 
                 
                 {/* Large high-quality men's grooming / barbershop image */}
                 <img
-                  src="/assets/hero_salon.jpg"
-                  alt="Good Luck Hair Salon interior with vintage barber chairs and dark luxury aesthetic"
+                  src={activeHero?.publicUrl || '/assets/hero_salon.jpg'}
+                  alt={activeHero?.altText || "Good Luck Hair Salon interior with vintage barber chairs and dark luxury aesthetic"}
                   loading="eager"
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-cover object-center transform scale-100 group-hover:scale-[1.03] transition-transform duration-700 ease-out"
                   onError={(e) => {
                     const target = e.currentTarget;
-                    if (target.src.indexOf('hero_barber_interior.jpg') === -1) {
+                    if (target.src.indexOf('hero_salon.jpg') === -1) {
+                      target.src = '/assets/hero_salon.jpg';
+                    } else if (target.src.indexOf('hero_barber_interior.jpg') === -1) {
                       target.src = '/assets/hero_barber_interior.jpg';
                     }
                   }}

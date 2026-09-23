@@ -225,6 +225,140 @@ async function runTests() {
     );
     assert(!!foundInLedger, `Booking ${generatedBookingId} found in Admin Bookings Ledger`);
     console.log(`  ✓ Complete Pipeline Verified: Booking ID ${generatedBookingId} created and reflected in Admin Dashboard`);
+
+    // [8] Admin Image Management System Verification
+    console.log('\n[8] Admin Image Management System Verification:');
+    const adminToken = 'goodluck-admin-secret-key-change-in-production';
+
+    // 8.1 Unauthorized image upload rejected
+    const unauthUploadRes = await fetch(`http://127.0.0.1:${port}/api/admin/images`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        slot: 'HERO',
+        fileBase64: 'data:image/jpeg;base64,dGVzdA==',
+      }),
+    });
+    assert(unauthUploadRes.status === 401, 'Unauthorized image upload rejected with 401');
+
+    // 8.2 Fallback works when no image exists for slot
+    const fallbackRes = await fetch(`http://127.0.0.1:${port}/api/images/active?slot=HERO`);
+    const fallbackJson = await fallbackRes.json();
+    assert(fallbackRes.status === 200, 'Public active images endpoint responds with 200');
+    assert(fallbackJson.data === null, 'Active hero image returns null fallback when none uploaded yet');
+
+    // 8.3 Invalid file type rejected
+    const invalidTypeRes = await fetch(`http://127.0.0.1:${port}/api/admin/images`, {
+      method: 'POST',
+      headers: {
+        'x-admin-token': adminToken,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        slot: 'HERO',
+        filename: 'malicious.exe',
+        mimetype: 'application/octet-stream',
+        fileBase64: 'data:application/octet-stream;base64,ZXhlY3V0YWJsZQ==',
+      }),
+    });
+    assert(invalidTypeRes.status === 400, 'Invalid file type rejected with 400 Bad Request');
+    const invalidTypeJson = await invalidTypeRes.json();
+    assert(invalidTypeJson.success === false, 'Invalid type response has success: false');
+
+    // 8.4 Oversized file rejected (> 5MB)
+    const oversizedBuffer = Buffer.alloc(5.5 * 1024 * 1024);
+    const oversizedBase64 = oversizedBuffer.toString('base64');
+    const oversizedRes = await fetch(`http://127.0.0.1:${port}/api/admin/images`, {
+      method: 'POST',
+      headers: {
+        'x-admin-token': adminToken,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        slot: 'HERO',
+        filename: 'oversized.jpg',
+        mimetype: 'image/jpeg',
+        fileBase64: `data:image/jpeg;base64,${oversizedBase64}`,
+      }),
+    });
+    assert(oversizedRes.status === 400, 'Oversized file (>5MB) rejected with 400 Bad Request');
+
+    // 8.5 Authorized admin upload accepted & metadata saved correctly
+    // 1x1 valid transparent PNG
+    const samplePngBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+    const uploadHero1Res = await fetch(`http://127.0.0.1:${port}/api/admin/images`, {
+      method: 'POST',
+      headers: {
+        'x-admin-token': adminToken,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        slot: 'HERO',
+        filename: 'salon_hero_1.png',
+        altText: 'Atmospheric barbershop interior chair 1',
+        isActive: true,
+        fileBase64: `data:image/png;base64,${samplePngBase64}`,
+      }),
+    });
+    const uploadHero1Json = await uploadHero1Res.json();
+    assert(uploadHero1Res.status === 201, 'Authorized admin upload accepted with 201 Created');
+    assert(uploadHero1Json.success === true, 'Upload response indicates success: true');
+    assert(uploadHero1Json.data.slot === 'HERO', 'Uploaded image slot correctly set to HERO');
+    assert(uploadHero1Json.data.isActive === true, 'Uploaded image is marked active');
+    assert(uploadHero1Json.data.altText === 'Atmospheric barbershop interior chair 1', 'Alt text persisted');
+    assert(uploadHero1Json.data.publicUrl.startsWith('/uploads/'), 'Public URL properly routed under /uploads/');
+    const hero1Id = uploadHero1Json.data.id;
+
+    // 8.6 Public active hero query returns this uploaded image
+    const activeHeroRes1 = await fetch(`http://127.0.0.1:${port}/api/images/active?slot=HERO`);
+    const activeHeroJson1 = await activeHeroRes1.json();
+    assert(activeHeroJson1.data?.id === hero1Id, 'Homepage active hero now returns newly uploaded hero image');
+
+    // 8.7 Only ONE Hero can be active at a time: Upload second Hero image
+    const uploadHero2Res = await fetch(`http://127.0.0.1:${port}/api/admin/images`, {
+      method: 'POST',
+      headers: {
+        'x-admin-token': adminToken,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        slot: 'HERO',
+        filename: 'salon_hero_2.png',
+        altText: 'Second salon chair with warm illumination',
+        isActive: true,
+        fileBase64: `data:image/png;base64,${samplePngBase64}`,
+      }),
+    });
+    const uploadHero2Json = await uploadHero2Res.json();
+    assert(uploadHero2Res.status === 201, 'Second hero image uploaded successfully');
+    const hero2Id = uploadHero2Json.data.id;
+    assert(uploadHero2Json.data.isActive === true, 'Second hero is active');
+
+    // Verify first hero was automatically deactivated
+    const adminImagesListRes = await fetch(`http://127.0.0.1:${port}/api/admin/images?slot=HERO`, {
+      headers: { 'x-admin-token': adminToken },
+    });
+    const adminImagesListJson = await adminImagesListRes.json();
+    const prevHero = adminImagesListJson.data.find((img: any) => img.id === hero1Id);
+    const currHero = adminImagesListJson.data.find((img: any) => img.id === hero2Id);
+    assert(prevHero.isActive === false, 'First hero image automatically deactivated to enforce single active hero rule');
+    assert(currHero.isActive === true, 'Second hero image remains the sole active hero');
+
+    // 8.8 Delete works
+    const deleteRes = await fetch(`http://127.0.0.1:${port}/api/admin/images/${hero2Id}`, {
+      method: 'DELETE',
+      headers: { 'x-admin-token': adminToken },
+    });
+    assert(deleteRes.status === 200, 'Delete image endpoint returns 200 OK');
+
+    // Verify deleted image is gone from active
+    const activeHeroResAfterDelete = await fetch(`http://127.0.0.1:${port}/api/images/active?slot=HERO`);
+    const activeHeroJsonAfterDelete = await activeHeroResAfterDelete.json();
+    assert(
+      activeHeroJsonAfterDelete.data === null || activeHeroJsonAfterDelete.data?.id !== hero2Id,
+      'Deleted image is no longer returned as active hero'
+    );
+    console.log('  ✓ Admin Image Management Security, Validation, Activation & Fallback fully verified');
   } finally {
     await new Promise<void>((resolve) => server.close(() => resolve()));
   }

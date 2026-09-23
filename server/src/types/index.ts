@@ -103,3 +103,20 @@ export interface ApiResponse<T = any> {
   data?: T;
   error?: string;
 }
+
+export type ImageSlot = 'HERO' | 'ABOUT' | 'GALLERY' | 'SERVICE' | 'LOGO';
+
+export interface ImageModel {
+  id: string;
+  slot: ImageSlot;
+  serviceId?: string | null;
+  storageKey: string;
+  publicUrl: string;
+  altText: string;
+  mimeType: string;
+  fileSize: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+

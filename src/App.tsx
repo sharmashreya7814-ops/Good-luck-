@@ -11,6 +11,7 @@ import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { AdminAppointmentsPage } from './pages/admin/AdminAppointmentsPage';
 import { AdminServicesPage } from './pages/admin/AdminServicesPage';
 import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
+import { AdminImagesPage } from './pages/admin/AdminImagesPage';
 import { apiClient } from './api/client';
 
 export default function App() {
@@ -38,6 +39,8 @@ export default function App() {
         setAdminTab('appointments');
       } else if (clean.startsWith('services')) {
         setAdminTab('services');
+      } else if (clean.startsWith('images')) {
+        setAdminTab('images');
       } else if (clean.startsWith('settings')) {
         setAdminTab('settings');
       } else {
@@ -150,6 +153,7 @@ export default function App() {
         )}
         {adminTab === 'appointments' && <AdminAppointmentsPage />}
         {adminTab === 'services' && <AdminServicesPage />}
+        {adminTab === 'images' && <AdminImagesPage />}
         {adminTab === 'settings' && <AdminSettingsPage />}
       </AdminLayout>
     );

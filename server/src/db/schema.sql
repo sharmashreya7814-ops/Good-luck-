@@ -138,3 +138,27 @@ ON CONFLICT (id) DO UPDATE SET
     is_popular = EXCLUDED.is_popular,
     tagline = EXCLUDED.tagline,
     updated_at = CURRENT_TIMESTAMP;
+
+-- ==============================================================================
+-- 6. Images Table (Admin Media Management)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS images (
+    id VARCHAR(64) PRIMARY KEY,
+    slot VARCHAR(32) NOT NULL,                                -- 'HERO', 'ABOUT', 'GALLERY', 'SERVICE', 'LOGO'
+    service_id VARCHAR(64) REFERENCES services(id) ON UPDATE CASCADE ON DELETE SET NULL,
+    storage_key VARCHAR(255) NOT NULL,
+    public_url VARCHAR(500) NOT NULL,
+    alt_text VARCHAR(255) NOT NULL,
+    mime_type VARCHAR(64),
+    file_size INTEGER,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_images_slot_active 
+    ON images (slot, is_active);
+
+CREATE INDEX IF NOT EXISTS idx_images_service 
+    ON images (service_id);
+

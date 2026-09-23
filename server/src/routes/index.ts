@@ -3,6 +3,7 @@ import serviceRoutes from './serviceRoutes';
 import appointmentRoutes from './appointmentRoutes';
 import availabilityRoutes from './availabilityRoutes';
 import adminRoutes from './adminRoutes';
+import imageRoutes from './imageRoutes';
 
 const router = Router();
 
@@ -10,6 +11,8 @@ router.use('/services', serviceRoutes);
 router.use('/appointments', appointmentRoutes);
 router.use('/availability', availabilityRoutes);
 router.use('/admin', adminRoutes);
+router.use('/images', imageRoutes);
+
 
 // Health check endpoint
 router.get('/health', (req, res) => {
