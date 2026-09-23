@@ -5,7 +5,9 @@ import {
   AppointmentModel, 
   AppointmentStatus,
   LocationType,
-  CreateAppointmentDTO
+  CreateAppointmentDTO,
+  ImageModel,
+  ImageSlot
 } from '../types';
 import { DEFAULT_BUSINESS_SETTINGS } from '../config/businessConfig';
 
@@ -31,6 +33,14 @@ export interface DatabaseRepository {
   getAppointmentByReference(reference: string): Promise<AppointmentModel | null>;
   createAppointment(appointment: Omit<AppointmentModel, 'id' | 'createdAt' | 'updatedAt'>): Promise<AppointmentModel>;
   updateAppointmentStatus(id: string, status: AppointmentStatus): Promise<AppointmentModel | null>;
+
+  // Images
+  getImages(filters?: { slot?: ImageSlot; isActive?: boolean; serviceId?: string }): Promise<ImageModel[]>;
+  getImageById(id: string): Promise<ImageModel | null>;
+  createImage(image: Omit<ImageModel, 'id' | 'createdAt' | 'updatedAt'>): Promise<ImageModel>;
+  updateImage(id: string, updates: Partial<ImageModel>): Promise<ImageModel | null>;
+  deleteImage(id: string): Promise<boolean>;
+  getActiveImageForSlot(slot: ImageSlot, serviceId?: string): Promise<ImageModel | null>;
 }
 
 // Initial Seed Data
@@ -146,6 +156,7 @@ class InMemoryDatabaseRepository implements DatabaseRepository {
   private staff: Map<string, StaffModel> = new Map();
   private settings: BusinessSettingsModel = { ...DEFAULT_BUSINESS_SETTINGS };
   private appointments: Map<string, AppointmentModel> = new Map();
+  private images: Map<string, ImageModel> = new Map();
 
   constructor() {
     INITIAL_SERVICES.forEach((s) => this.services.set(s.id, { ...s }));
@@ -293,6 +304,98 @@ class InMemoryDatabaseRepository implements DatabaseRepository {
     };
     this.appointments.set(id, updated);
     return updated;
+  }
+
+  // Images Repository Methods
+  async getImages(filters?: { slot?: ImageSlot; isActive?: boolean; serviceId?: string }): Promise<ImageModel[]> {
+    let list = Array.from(this.images.values());
+    if (filters?.slot) {
+      list = list.filter((img) => img.slot === filters.slot);
+    }
+    if (filters?.isActive !== undefined) {
+      list = list.filter((img) => img.isActive === filters.isActive);
+    }
+    if (filters?.serviceId !== undefined) {
+      list = list.filter((img) => img.serviceId === filters.serviceId);
+    }
+    // Sort newest first
+    return list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  async getImageById(id: string): Promise<ImageModel | null> {
+    return this.images.get(id) || null;
+  }
+
+  async createImage(data: Omit<ImageModel, 'id' | 'createdAt' | 'updatedAt'>): Promise<ImageModel> {
+    const id = 'img-' + Math.random().toString(36).substring(2, 10);
+    const now = new Date().toISOString();
+
+    // Enforce business rule: Only ONE active HERO image at a time
+    if (data.slot === 'HERO' && data.isActive) {
+      for (const [key, existing] of this.images.entries()) {
+        if (existing.slot === 'HERO' && existing.isActive) {
+          this.images.set(key, {
+            ...existing,
+            isActive: false,
+            updatedAt: now,
+          });
+        }
+      }
+    }
+
+    const image: ImageModel = {
+      ...data,
+      id,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.images.set(id, image);
+    return image;
+  }
+
+  async updateImage(id: string, updates: Partial<ImageModel>): Promise<ImageModel | null> {
+    const existing = this.images.get(id);
+    if (!existing) return null;
+
+    const now = new Date().toISOString();
+    const targetSlot = updates.slot || existing.slot;
+    const targetIsActive = updates.isActive !== undefined ? updates.isActive : existing.isActive;
+
+    // Enforce business rule: Only ONE active HERO image at a time
+    if (targetSlot === 'HERO' && targetIsActive) {
+      for (const [key, current] of this.images.entries()) {
+        if (key !== id && current.slot === 'HERO' && current.isActive) {
+          this.images.set(key, {
+            ...current,
+            isActive: false,
+            updatedAt: now,
+          });
+        }
+      }
+    }
+
+    const updated: ImageModel = {
+      ...existing,
+      ...updates,
+      updatedAt: now,
+    };
+    this.images.set(id, updated);
+    return updated;
+  }
+
+  async deleteImage(id: string): Promise<boolean> {
+    return this.images.delete(id);
+  }
+
+  async getActiveImageForSlot(slot: ImageSlot, serviceId?: string): Promise<ImageModel | null> {
+    const list = Array.from(this.images.values());
+    if (slot === 'SERVICE' && serviceId) {
+      const match = list.find((img) => img.slot === 'SERVICE' && img.serviceId === serviceId && img.isActive);
+      if (match) return match;
+    }
+
+    const match = list.find((img) => img.slot === slot && img.isActive);
+    return match || null;
   }
 }
 

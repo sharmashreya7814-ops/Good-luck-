@@ -14,7 +14,7 @@ import {
 import { apiClient } from '../../api/client';
 
 interface AdminDashboardPageProps {
-  onNavigateTab: (tab: 'appointments' | 'services' | 'settings') => void;
+  onNavigateTab: (tab: 'appointments' | 'services' | 'settings' | 'images') => void;
 }
 
 export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onNavigateTab }) => {

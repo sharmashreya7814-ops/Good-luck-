@@ -7,13 +7,15 @@ import {
   LogOut, 
   ArrowLeft,
   Users,
-  ShieldAlert
+  ShieldAlert,
+  Image as ImageIcon
 } from 'lucide-react';
 import { apiClient } from '../../api/client';
 
-export type AdminTab = 'dashboard' | 'appointments' | 'services' | 'settings';
+export type AdminTab = 'dashboard' | 'appointments' | 'services' | 'images' | 'settings';
 
 interface AdminLayoutProps {
+
   currentTab: AdminTab;
   onNavigateTab: (tab: AdminTab) => void;
   onNavigateClient: () => void;
@@ -91,6 +93,19 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           >
             <Scissors className="w-4 h-4" />
             <span>Service Catalog</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onNavigateTab('images')}
+            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-colors ${
+              currentTab === 'images'
+                ? 'bg-[#c5a880] text-black font-semibold'
+                : 'text-[#a29e95] hover:bg-[#181b22] hover:text-white'
+            }`}
+          >
+            <ImageIcon className="w-4 h-4" />
+            <span>Website Images</span>
           </button>
 
           <button

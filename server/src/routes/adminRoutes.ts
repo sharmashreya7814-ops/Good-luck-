@@ -1,8 +1,18 @@
 import { Router } from 'express';
+import multer from 'multer';
 import { adminController } from '../controllers/adminController';
+import { imageController } from '../controllers/imageController';
 import { requireAdminAuth } from '../middleware/authMiddleware';
 
 const router = Router();
+
+// Configure multer memory storage for secure in-memory buffer inspection and size enforcement
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5 MB maximum file limit
+  },
+});
 
 // Apply admin authentication middleware to all admin endpoints
 router.use(requireAdminAuth);
@@ -26,4 +36,13 @@ router.put('/services/:id', (req, res, next) => adminController.updateService(re
 router.get('/settings', (req, res, next) => adminController.getSettings(req, res, next));
 router.put('/settings', (req, res, next) => adminController.updateSettings(req, res, next));
 
+// Image Management (Admin media storage)
+router.get('/images', (req, res, next) => imageController.listImages(req, res, next));
+router.post('/images', upload.single('image'), (req, res, next) => imageController.uploadImage(req, res, next));
+router.patch('/images/:id', (req, res, next) => imageController.updateMetadata(req, res, next));
+router.put('/images/:id/file', upload.single('image'), (req, res, next) => imageController.replaceFile(req, res, next));
+router.post('/images/:id/replace', upload.single('image'), (req, res, next) => imageController.replaceFile(req, res, next));
+router.delete('/images/:id', (req, res, next) => imageController.deleteImage(req, res, next));
+
 export default router;
+
