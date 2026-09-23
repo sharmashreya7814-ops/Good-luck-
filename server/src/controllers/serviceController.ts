@@ -15,7 +15,11 @@ export class ServiceController {
 
   async getServiceById(req: Request, res: Response, next: NextFunction) {
     try {
-      const service = await serviceManagementService.getServiceById(req.params.id);
+      const { id } = req.params;
+      if (typeof id !== 'string') {
+        return sendError(res, 'Invalid service id.', 400);
+      }
+      const service = await serviceManagementService.getServiceById(id);
       if (!service) {
         return sendError(res, 'Service not found', 404);
       }
@@ -49,7 +53,11 @@ export class ServiceController {
 
   async updateService(req: Request, res: Response, next: NextFunction) {
     try {
-      const updated = await serviceManagementService.updateService(req.params.id, req.body);
+      const { id } = req.params;
+      if (typeof id !== 'string') {
+        return sendError(res, 'Invalid service id.', 400);
+      }
+      const updated = await serviceManagementService.updateService(id, req.body);
       if (!updated) {
         return sendError(res, 'Service not found', 404);
       }
@@ -61,7 +69,11 @@ export class ServiceController {
 
   async deleteService(req: Request, res: Response, next: NextFunction) {
     try {
-      const deleted = await serviceManagementService.deleteService(req.params.id);
+      const { id } = req.params;
+      if (typeof id !== 'string') {
+        return sendError(res, 'Invalid service id.', 400);
+      }
+      const deleted = await serviceManagementService.deleteService(id);
       if (!deleted) {
         return sendError(res, 'Service not found', 404);
       }

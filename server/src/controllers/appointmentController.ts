@@ -34,7 +34,11 @@ export class AppointmentController {
 
   async getAppointmentById(req: Request, res: Response, next: NextFunction) {
     try {
-      const appointment = await appointmentService.getAppointmentById(req.params.id);
+      const { id } = req.params;
+      if (typeof id !== 'string') {
+        return sendError(res, 'Invalid appointment id.', 400);
+      }
+      const appointment = await appointmentService.getAppointmentById(id);
       return sendSuccess(res, appointment);
     } catch (err) {
       next(err);
@@ -43,7 +47,11 @@ export class AppointmentController {
 
   async getAppointmentByReference(req: Request, res: Response, next: NextFunction) {
     try {
-      const appointment = await appointmentService.getAppointmentByReference(req.params.reference);
+      const { reference } = req.params;
+      if (typeof reference !== 'string') {
+        return sendError(res, 'Invalid appointment reference.', 400);
+      }
+      const appointment = await appointmentService.getAppointmentByReference(reference);
       return sendSuccess(res, appointment);
     } catch (err) {
       next(err);
@@ -56,7 +64,11 @@ export class AppointmentController {
       if (!status) {
         return sendError(res, 'Field "status" is required.', 400);
       }
-      const updated = await appointmentService.updateStatus(req.params.id, status as AppointmentStatus);
+      const { id } = req.params;
+      if (typeof id !== 'string') {
+        return sendError(res, 'Invalid appointment id.', 400);
+      }
+      const updated = await appointmentService.updateStatus(id, status as AppointmentStatus);
       return sendSuccess(res, updated, 'Appointment status updated successfully');
     } catch (err) {
       next(err);

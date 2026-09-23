@@ -89,6 +89,9 @@ export class ImageController {
   async updateMetadata(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
+      if (typeof id !== 'string') {
+        return sendError(res, 'Invalid image id.', 400);
+      }
       const { altText, isActive, slot, serviceId } = req.body;
 
       const updates: {
@@ -117,6 +120,9 @@ export class ImageController {
   async replaceFile(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
+      if (typeof id !== 'string') {
+        return sendError(res, 'Invalid image id.', 400);
+      }
       let fileBuffer: Buffer | null = null;
       let filename: string = 'image.jpg';
       let mimetype: string = 'image/jpeg';
@@ -164,6 +170,9 @@ export class ImageController {
   async deleteImage(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
+      if (typeof id !== 'string') {
+        return sendError(res, 'Invalid image id.', 400);
+      }
       await imageService.deleteImage(id);
       return sendSuccess(res, { deletedId: id }, 'Image deleted successfully', 200);
     } catch (err) {

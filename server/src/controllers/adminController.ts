@@ -72,7 +72,11 @@ export class AdminController {
 
   async updateService(req: Request, res: Response, next: NextFunction) {
     try {
-      const updated = await serviceManagementService.updateService(req.params.id, req.body);
+      const { id } = req.params;
+      if (typeof id !== 'string') {
+        return sendError(res, 'Invalid service id.', 400);
+      }
+      const updated = await serviceManagementService.updateService(id, req.body);
       if (!updated) {
         return sendError(res, 'Service not found', 404);
       }
@@ -88,7 +92,11 @@ export class AdminController {
       if (!status) {
         return sendError(res, 'Status is required.', 400);
       }
-      const updated = await appointmentService.updateStatus(req.params.id, status as AppointmentStatus);
+      const { id } = req.params;
+      if (typeof id !== 'string') {
+        return sendError(res, 'Invalid appointment id.', 400);
+      }
+      const updated = await appointmentService.updateStatus(id, status as AppointmentStatus);
       return sendSuccess(res, updated, 'Appointment status updated successfully');
     } catch (err) {
       next(err);
