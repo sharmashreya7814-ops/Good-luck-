@@ -15,7 +15,11 @@ export interface ServiceItem {
   active: boolean;
   isPopular?: boolean;
   highlights?: string[];
+  features?: string[];
   image?: string;
+  imageUrl?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface BusinessConfig {

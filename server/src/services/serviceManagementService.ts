@@ -21,6 +21,9 @@ export class ServiceManagementService {
     active?: boolean;
     isPopular?: boolean;
     tagline?: string;
+    features?: string[];
+    highlights?: string[];
+    imageUrl?: string;
   }): Promise<ServiceModel> {
     const id = data.id || data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     const service = await db.createService({
@@ -34,6 +37,9 @@ export class ServiceManagementService {
       active: data.active ?? true,
       isPopular: data.isPopular ?? false,
       tagline: data.tagline,
+      features: data.features || data.highlights,
+      highlights: data.highlights || data.features,
+      imageUrl: data.imageUrl,
     });
     return service;
   }

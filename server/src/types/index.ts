@@ -13,6 +13,9 @@ export interface ServiceModel {
   active: boolean;
   isPopular?: boolean;
   tagline?: string;
+  features?: string[];
+  highlights?: string[];
+  imageUrl?: string;
   createdAt: string;
   updatedAt: string;
 }

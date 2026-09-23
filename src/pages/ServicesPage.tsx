@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { SERVICES, SERVICE_CATEGORIES } from '../data/services';
 import { ServiceCard } from '../components/ServiceCard';
-import { ServiceCategory } from '../types';
+import { ServiceCategory, ServiceItem } from '../types';
 import { Scissors, Check, Sparkles, Clock, ArrowRight, ShieldCheck, Home, Calendar } from 'lucide-react';
 import { BUSINESS_INFO } from '../data/business';
+import { apiClient } from '../api/client';
 
 interface ServicesPageProps {
   onBookService: (serviceId: string) => void;
@@ -11,21 +12,44 @@ interface ServicesPageProps {
 }
 
 export const ServicesPage: React.FC<ServicesPageProps> = ({ onBookService, onNavigateHome }) => {
+  const [services, setServices] = useState<ServiceItem[]>(SERVICES);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    apiClient
+      .getServices()
+      .then((data) => {
+        if (isMounted && Array.isArray(data) && data.length > 0) {
+          setServices(data);
+        }
+      })
+      .catch((err) => {
+        console.warn('[ServicesPage] Failed to fetch live services catalog, using fallback:', err);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const filteredServices = useMemo(() => {
-    return SERVICES.filter((service) => {
+    return services.filter((service) => {
       if (!service.active) return false;
       const matchesCategory =
         selectedCategory === 'all' || service.category === selectedCategory;
       const matchesSearch =
         service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        service.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (service.description && service.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (service.tagline && service.tagline.toLowerCase().includes(searchQuery.toLowerCase()));
       return matchesCategory && matchesSearch;
     });
-  }, [selectedCategory, searchQuery]);
+  }, [services, selectedCategory, searchQuery]);
 
   return (
     <div className="pt-28 pb-24 bg-[#0c0d0e] min-h-screen text-[#e6e4df]">
@@ -108,14 +132,15 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({ onBookService, onNav
           </div>
         </div>
 
-        {/* Results Count & Indicative Pricing Note */}
+        {/* Results Count & Salon Guarantee */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-4 text-xs text-[#8c919d]">
           <div>
-            Showing <strong className="text-[#e2ded7] font-mono">{filteredServices.length}</strong> services
+            Showing <strong className="text-[#e2ded7] font-mono">{filteredServices.length}</strong> active service{filteredServices.length === 1 ? '' : 's'}
             {selectedCategory !== 'all' && ` in ${SERVICE_CATEGORIES.find(c => c.id === selectedCategory)?.label}`}
           </div>
-          <div className="text-[#c5a880]">
-            * Listed prices and durations are realistic placeholders and easily adjusted.
+          <div className="flex items-center gap-1.5 text-[#c5a880]">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>Guaranteed fixed pricing & dedicated chair time</span>
           </div>
         </div>
 

@@ -6,6 +6,7 @@
 
 import { SERVICES } from '../data/services';
 import { calculateAvailableSlots } from '../data/availability';
+import { ServiceItem } from '../types';
 
 export interface ApiTimeSlot {
   time: string;
@@ -90,7 +91,7 @@ class SalonApiClient {
   /**
    * Fetch services from backend or fallback to local definition
    */
-  async getServices(): Promise<any[]> {
+  async getServices(): Promise<ServiceItem[]> {
     try {
       const res = await fetch(`${API_BASE_URL}/api/services`);
       if (res.ok) {
@@ -251,7 +252,7 @@ class SalonApiClient {
     return json.data;
   }
 
-  async getAdminServices(): Promise<any[]> {
+  async getAdminServices(): Promise<ServiceItem[]> {
     const res = await fetch(`${API_BASE_URL}/api/admin/services`, {
       headers: this.getAuthHeaders(),
     });
@@ -262,8 +263,21 @@ class SalonApiClient {
     return json.data;
   }
 
-  async updateService(id: string, updates: any): Promise<any> {
-    const res = await fetch(`${API_BASE_URL}/api/admin/services/${id}`, {
+  async createService(serviceData: Partial<ServiceItem>): Promise<ServiceItem> {
+    const res = await fetch(`${API_BASE_URL}/api/services`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(serviceData),
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.message || 'Failed to create service.');
+    }
+    return json.data;
+  }
+
+  async updateService(id: string, updates: Partial<ServiceItem>): Promise<ServiceItem> {
+    const res = await fetch(`${API_BASE_URL}/api/services/${id}`, {
       method: 'PUT',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(updates),
@@ -271,6 +285,18 @@ class SalonApiClient {
     const json = await res.json();
     if (!res.ok || !json.success) {
       throw new Error(json.message || 'Failed to update service.');
+    }
+    return json.data;
+  }
+
+  async deleteService(id: string): Promise<{ success: boolean; id: string; deactivated?: boolean }> {
+    const res = await fetch(`${API_BASE_URL}/api/services/${id}`, {
+      method: 'DELETE',
+      headers: this.getAuthHeaders(),
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.message || 'Failed to delete service.');
     }
     return json.data;
   }

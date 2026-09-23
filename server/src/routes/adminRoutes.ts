@@ -31,6 +31,7 @@ router.get('/customers', (req, res, next) => adminController.getCustomers(req, r
 router.get('/services', (req, res, next) => adminController.getServices(req, res, next));
 router.post('/services', (req, res, next) => adminController.createService(req, res, next));
 router.put('/services/:id', (req, res, next) => adminController.updateService(req, res, next));
+router.delete('/services/:id', (req, res, next) => adminController.deleteService(req, res, next));
 
 // Business settings
 router.get('/settings', (req, res, next) => adminController.getSettings(req, res, next));

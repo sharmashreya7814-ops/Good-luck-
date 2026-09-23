@@ -38,25 +38,38 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, onBookService
       <div>
         {/* Service Image / Stylized Visual Header if provided or default icon container */}
         <div className="relative aspect-[16/9] w-full rounded-xl overflow-hidden bg-gradient-to-br from-[#1b1e25] via-[#14161b] to-[#0f1114] border border-[#232731] mb-5 flex flex-col justify-between p-4 group-hover:border-[#383e4d] transition-colors">
+          {(service.imageUrl || service.image) && (
+            <img
+              src={service.imageUrl || service.image}
+              alt={service.name}
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          )}
+          {(service.imageUrl || service.image) && (
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0e1013] via-[#0e1013]/60 to-black/40 pointer-events-none" />
+          )}
+
           <div className="flex items-center justify-between z-10">
-            <span className="text-[10px] font-mono tracking-wider uppercase text-[#c5a880] px-2 py-0.5 rounded bg-[#131518]/90 border border-[#2a2e38]">
+            <span className="text-[10px] font-mono tracking-wider uppercase text-[#c5a880] px-2 py-0.5 rounded bg-[#131518]/90 border border-[#2a2e38] backdrop-blur-sm">
               {getCategoryLabel(service.category)}
             </span>
             {service.isPopular && (
-              <span className="text-[10px] text-[#c5a880] border border-[#c5a880]/30 px-2 py-0.5 rounded tracking-wide font-medium bg-[#1d1a15]">
+              <span className="text-[10px] text-[#c5a880] border border-[#c5a880]/30 px-2 py-0.5 rounded tracking-wide font-medium bg-[#1d1a15]/90 backdrop-blur-sm">
                 Recommended
               </span>
             )}
           </div>
 
-          <div className="my-auto flex items-center justify-center">
-            <div className="w-10 h-10 rounded-xl bg-[#1b1e25] border border-[#2b313d] flex items-center justify-center text-[#c5a880] group-hover:scale-105 group-hover:border-[#c5a880]/40 transition-all duration-300">
-              <Scissors className="w-4 h-4 stroke-[1.75]" />
+          {!service.imageUrl && !service.image && (
+            <div className="my-auto flex items-center justify-center z-10">
+              <div className="w-10 h-10 rounded-xl bg-[#1b1e25] border border-[#2b313d] flex items-center justify-center text-[#c5a880] group-hover:scale-105 group-hover:border-[#c5a880]/40 transition-all duration-300">
+                <Scissors className="w-4 h-4 stroke-[1.75]" />
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="flex items-center justify-between text-[11px] text-[#8c919d] z-10 pt-1 border-t border-[#1e2229]">
-            <span className="flex items-center gap-1 font-mono">
+          <div className="flex items-center justify-between text-[11px] text-[#8c919d] z-10 pt-1 border-t border-[#1e2229]/80 backdrop-blur-sm mt-auto">
+            <span className="flex items-center gap-1 font-mono text-[#dcd7ce]">
               <Clock className="w-3 h-3 text-[#c5a880]" />
               {duration} mins
             </span>
@@ -84,9 +97,9 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, onBookService
         </p>
 
         {/* Highlights List */}
-        {service.highlights && service.highlights.length > 0 && (
+        {((service.features && service.features.length > 0) || (service.highlights && service.highlights.length > 0)) && (
           <ul className="space-y-1.5 mb-6 pt-3 border-t border-[#1e2229]">
-            {service.highlights.map((highlight, idx) => (
+            {(service.features || service.highlights || []).map((highlight, idx) => (
               <li key={idx} className="flex items-center gap-2 text-xs text-[#b0aba2]">
                 <Check className="w-3.5 h-3.5 text-[#c5a880] shrink-0" />
                 <span className="line-clamp-1">{highlight}</span>

@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SERVICES, SERVICE_CATEGORIES } from '../data/services';
 import { ServiceCard } from './ServiceCard';
 import { Scissors } from 'lucide-react';
+import { ServiceItem } from '../types';
+import { apiClient } from '../api/client';
 
 interface ServicesProps {
   onBookService: (serviceId: string) => void;
@@ -9,11 +11,29 @@ interface ServicesProps {
 }
 
 export const Services: React.FC<ServicesProps> = ({ onBookService, onViewAllServices }) => {
+  const [services, setServices] = useState<ServiceItem[]>(SERVICES);
   const [activeCategory, setActiveCategory] = useState<string>('all');
 
+  useEffect(() => {
+    let isMounted = true;
+    apiClient
+      .getServices()
+      .then((data) => {
+        if (isMounted && Array.isArray(data) && data.length > 0) {
+          setServices(data);
+        }
+      })
+      .catch((err) => {
+        console.warn('[Home Services] Failed to fetch live services, using default:', err);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const filteredServices = activeCategory === 'all'
-    ? SERVICES.filter((s) => s.active)
-    : SERVICES.filter((s) => s.active && s.category === activeCategory);
+    ? services.filter((s) => s.active)
+    : services.filter((s) => s.active && s.category === activeCategory);
 
   return (
     <section id="services" className="py-20 md:py-28 bg-[#0c0d0e] relative">

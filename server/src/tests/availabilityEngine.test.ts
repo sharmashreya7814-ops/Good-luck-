@@ -359,6 +359,163 @@ async function runTests() {
       'Deleted image is no longer returned as active hero'
     );
     console.log('  ✓ Admin Image Management Security, Validation, Activation & Fallback fully verified');
+
+    // [9] Admin Service Management System Verification
+    console.log('\n[9] Admin Service Management System Verification:');
+
+    // 9.1 Unauthorized service creation rejected with 401
+    const unauthServiceRes = await fetch(`http://127.0.0.1:${port}/api/services`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'VIP Hair Spa',
+        category: 'hair',
+        price: '₹400',
+        duration: 45,
+      }),
+    });
+    assert(unauthServiceRes.status === 401, 'Unauthorized service creation rejected with 401');
+
+    // 9.2 Validation: Empty service name rejected
+    const emptyNameRes = await fetch(`http://127.0.0.1:${port}/api/services`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-token': adminToken,
+      },
+      body: JSON.stringify({
+        name: '   ',
+        category: 'hair',
+        price: '300',
+        duration: 30,
+      }),
+    });
+    assert(emptyNameRes.status === 400, 'Empty service name rejected with 400');
+
+    // 9.3 Validation: Negative price rejected
+    const negativePriceRes = await fetch(`http://127.0.0.1:${port}/api/services`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-token': adminToken,
+      },
+      body: JSON.stringify({
+        name: 'Premium Beard Styling',
+        category: 'beard',
+        price: '-50',
+        duration: 20,
+      }),
+    });
+    assert(negativePriceRes.status === 400, 'Negative price rejected with 400');
+
+    // 9.4 Validation: Invalid duration rejected
+    const invalidDurRes = await fetch(`http://127.0.0.1:${port}/api/services`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-token': adminToken,
+      },
+      body: JSON.stringify({
+        name: 'Scalp Detox',
+        category: 'hair',
+        price: '250',
+        duration: -10,
+      }),
+    });
+    assert(invalidDurRes.status === 400, 'Negative or zero duration rejected with 400');
+
+    // 9.5 Validation: Invalid category rejected
+    const invalidCatRes = await fetch(`http://127.0.0.1:${port}/api/services`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-token': adminToken,
+      },
+      body: JSON.stringify({
+        name: 'Random Service',
+        category: 'invalid_category_xyz',
+        price: '200',
+        duration: 30,
+      }),
+    });
+    assert(invalidCatRes.status === 400, 'Invalid category rejected with 400');
+
+    // 9.6 Authorized creation accepted
+    const createServiceRes = await fetch(`http://127.0.0.1:${port}/api/services`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-token': adminToken,
+      },
+      body: JSON.stringify({
+        name: 'Royal Charcoal Facial & Beard Spa',
+        category: 'beard',
+        price: '350',
+        duration: 40,
+        tagline: 'Deep detox with hot steam and beard nourishment',
+        description: 'Exfoliating charcoal scrub followed by beard conditioning and facial rejuvenation.',
+        features: ['Charcoal deep exfoliation', 'Steam & blackhead extraction', 'Beard softening mask'],
+        homeServiceAvailable: true,
+        isPopular: true,
+        active: true,
+      }),
+    });
+    const createServiceJson = await createServiceRes.json();
+    assert(createServiceRes.status === 201, 'Authorized service creation accepted with 201 Created');
+    assert(createServiceJson.success === true, 'Service creation response indicates success');
+    const createdServiceId = createServiceJson.data.id;
+    assert(createServiceJson.data.name === 'Royal Charcoal Facial & Beard Spa', 'Service name matches');
+    assert(createServiceJson.data.price === '₹350', 'Price normalized with currency symbol');
+    assert(createServiceJson.data.duration === 40, 'Duration persisted correctly');
+    assert(createServiceJson.data.isPopular === true, 'Recommended flag set');
+
+    // 9.7 Edit Service
+    const updateServiceRes = await fetch(`http://127.0.0.1:${port}/api/services/${createdServiceId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-token': adminToken,
+      },
+      body: JSON.stringify({
+        price: '₹380',
+        duration: 45,
+        tagline: 'Luxury deep detox with hot steam',
+      }),
+    });
+    const updateServiceJson = await updateServiceRes.json();
+    assert(updateServiceRes.status === 200, 'Service update accepted with 200 OK');
+    assert(updateServiceJson.data.price === '₹380', 'Updated price reflected');
+    assert(updateServiceJson.data.duration === 45, 'Updated duration reflected');
+
+    // 9.8 Verify service is present in public services listing
+    const publicServicesRes = await fetch(`http://127.0.0.1:${port}/api/services`);
+    const publicServicesJson = await publicServicesRes.json();
+    const foundInPublic = publicServicesJson.data.find((s: any) => s.id === createdServiceId);
+    assert(!!foundInPublic, 'New service is immediately visible in public services catalog');
+    assert(foundInPublic.price === '₹380', 'Public service uses actual updated price');
+
+    // 9.9 Delete / Soft-deactivation
+    const deleteServiceRes = await fetch(`http://127.0.0.1:${port}/api/services/${createdServiceId}`, {
+      method: 'DELETE',
+      headers: { 'x-admin-token': adminToken },
+    });
+    assert(deleteServiceRes.status === 200, 'Delete service accepted with 200 OK');
+
+    // 9.10 Verify service is excluded from public catalog after deactivation
+    const publicServicesAfterDelete = await fetch(`http://127.0.0.1:${port}/api/services`);
+    const publicServicesAfterDeleteJson = await publicServicesAfterDelete.json();
+    const foundAfterDelete = publicServicesAfterDeleteJson.data.find((s: any) => s.id === createdServiceId);
+    assert(!foundAfterDelete, 'Deactivated service is excluded from public active catalog');
+
+    // 9.11 Verify service record still exists in admin listing with active: false (preserving appointment relationships)
+    const adminServicesAfterDelete = await fetch(`http://127.0.0.1:${port}/api/admin/services`, {
+      headers: { 'x-admin-token': adminToken },
+    });
+    const adminServicesAfterDeleteJson = await adminServicesAfterDelete.json();
+    const foundInAdmin = adminServicesAfterDeleteJson.data.find((s: any) => s.id === createdServiceId);
+    assert(!!foundInAdmin && foundInAdmin.active === false, 'Service preserved in database as inactive to protect historical appointment integrity');
+
+    console.log('  ✓ Admin Service Management CRUD, Validation & Soft-delete fully verified');
   } finally {
     await new Promise<void>((resolve) => server.close(() => resolve()));
   }

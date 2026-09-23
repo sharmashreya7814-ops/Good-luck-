@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { adminService } from '../services/adminService';
 import { appointmentService } from '../services/appointmentService';
 import { serviceManagementService } from '../services/serviceManagementService';
+import { serviceController } from './serviceController';
 import { sendSuccess, sendError } from '../utils/apiResponse';
 import { AppointmentStatus, LocationType } from '../types';
 
@@ -48,42 +49,15 @@ export class AdminController {
   }
 
   async createService(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { name, category, description, price, duration, homeServiceAvailable, tagline, isPopular, active } = req.body;
-      if (!name || !price || !duration) {
-        return sendError(res, 'Name, price, and duration are required fields.', 400);
-      }
-      const newService = await serviceManagementService.createService({
-        name,
-        category: category || 'hair',
-        description: description || '',
-        price,
-        duration: Number(duration),
-        homeServiceAvailable: Boolean(homeServiceAvailable),
-        tagline,
-        isPopular: Boolean(isPopular),
-        active: active !== undefined ? Boolean(active) : true,
-      });
-      return sendSuccess(res, newService, 'Service created successfully', 201);
-    } catch (err) {
-      next(err);
-    }
+    return serviceController.createService(req, res, next);
   }
 
   async updateService(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      if (typeof id !== 'string') {
-        return sendError(res, 'Invalid service id.', 400);
-      }
-      const updated = await serviceManagementService.updateService(id, req.body);
-      if (!updated) {
-        return sendError(res, 'Service not found', 404);
-      }
-      return sendSuccess(res, updated, 'Service updated successfully');
-    } catch (err) {
-      next(err);
-    }
+    return serviceController.updateService(req, res, next);
+  }
+
+  async deleteService(req: Request, res: Response, next: NextFunction) {
+    return serviceController.deleteService(req, res, next);
   }
 
   async updateAppointmentStatus(req: Request, res: Response, next: NextFunction) {
