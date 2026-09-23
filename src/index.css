@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-serif: 'Cormorant Garamond', Georgia, serif;
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    
+    /* Luxury Brand Tokens */
+    --color-gold: #c5a880;
+    --color-gold-hover: #d8be98;
+    --color-gold-muted: rgba(197, 168, 128, 0.15);
+    
+    --bg-base: #0c0d0e;
+    --bg-surface: #131518;
+    --bg-elevated: #1a1d22;
+    --border-subtle: #242830;
+    --border-accent: rgba(197, 168, 128, 0.25);
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-base);
+    color: #e6e4df;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, .font-serif {
+    font-family: var(--font-serif);
+  }
+}
+
+/* Custom scrollbar for modern browsers */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0c0d0e;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #252932;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #393f4c;
+}

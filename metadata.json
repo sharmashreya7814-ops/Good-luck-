@@ -1,0 +1,6 @@
+{
+  "name": "Good Luck Hair Salon",
+  "description": "Premium men's grooming, traditional styling, and therapeutic massage salon. Authentic craftsmanship, personal care, and flexible salon or home service appointments.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
